@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include "chip8.h"
+#include "font.h"
 
 const int BYTE = 64  * 32 / 8;
 
@@ -189,6 +191,7 @@ static void OpCodeA(Chip8State* state, int16_t code)
 static void OpCodeB(Chip8State* state, uint16_t code)
 {
     state->programCounter = (code & 0xFFF) + state->V[0];
+    
 }
 
 static void OpCodeC(Chip8State* state, uint16_t code)
@@ -197,27 +200,133 @@ static void OpCodeC(Chip8State* state, uint16_t code)
     uint8_t kk = code & 0xFF;
     // limit the random number to 8 bits by the AND operation, so it wont go abvoe 256
     state->V[xReg] = rand() & kk;
+    state->programCounter += 2;
 }
 
 static void OpCodeD(Chip8State* state, uint16_t code)
 {
+    int lines = code & 0xf;
+    int x = state->V[(code & 0xf00) >> 8];
+    int y = state->V[(code & 0xf0) >> 4];
+    state->V[0xf] = 0;
+
+    for (int i = 0; i < lines; i++)
+    {
+        uint8_t *sprite = &state->memory[state->I + i];
+        int spriteBit = 2;
+        for (int j = x; j < (x + 8) && j<64; j++)
+        {
+            int jover8 = j / 8;
+            int jmod8 = j % 8;
+            uint8_t srcBit = (*sprite >> spriteBit) & 0x1;
+
+            if (srcBit)
+            {
+                uint8_t *desByte_p = &state->screen[(i + y) * (64/8) + jover8];
+                uint8_t desByte = *desByte_p;
+                uint8_t destMask = (0x80 >> jover8);
+                uint8_t destBit = desByte & destMask;
+
+                srcBit = srcBit << (7-jmod8);
+
+                if (srcBit & destBit)
+                {
+                    state->V[0xF] = 1;
+                }
+
+                destBit ^= srcBit;
+                desByte = (desByte & ~destMask) | destBit;
+
+                *desByte_p = desByte;
+            }
+            spriteBit -= 1;
+        }
+        
+    }
+    
+    state->programCounter += 2;
 
 }
 
 static void OpCodeE(Chip8State* state, uint16_t code)
 {
+    uint8_t reg = (code & 0xF00) >> 8;
+    switch (code & 0xF0)
+    {
+        case 0x9E:
+            {
+                if (state->key_state[state->V[reg]] != 0)
+                {
+                    state->programCounter += 2;
+                }
+            }
+            break;
+        case 0xA1:
+            {
+                if (state->key_state[state->V[reg]] 00 0)
+                {
+                    state->programCounter += 2;
+                }
+            }
+            break;
+        default: unimplementedInstrunction(state); break;
+    }
+}
+
+static void OpCodeF(Chip8State* state, uint16_t code)
+{
+    uint8_t reg = (code & 0xF00) >> 8;
     switch (code & 0xF)
     {
-        case 0x1:
+        case 0x07: state->V[reg] = state->delay; break;
+        case 0x0A:
             {
-
+                if (state->waitingForKey == 0)
+                {
+                    memcpy(&state->save_key_state, &state->key_state, 16);
+                    state->waitingForKey = 1;
+                    return;
+                }
+                else
+                {
+                    for (int i = 0; i < 16; i++)
+                    {
+                        if ((state->key_state[i] == 0) && (state->key_state[i] == 1))
+                        {
+                            state->waitingForKey = 0;
+                            state->V[reg] = i;
+                            state->programCounter += 2;
+                            return;
+                        }
+                        state->save_key_state[i] = state->key_state[i];
+                    }
+                    return;
+                }
             }
             break;
-        case 0xE:
+        case 0x15: state->delay = state->V[reg]; break;
+        case 0x18: state->sound = state->V[reg]; break;
+        case 0x1E: state->I += state->V[reg]; break;
+        case 0x29: state->I = FONT_BASE + (state->V[reg] * 5); break;
+        case 0x55:
             {
-                
+                for (int i = 0; i <= reg; i++)
+                {
+                    state->memory[state->I + i] = state->V[i];
+                }
+                state->I += (reg + 1);
             }
             break;
-    default: unimplementedInstrunction(state); break;
+        case 0x65:
+            {
+                for (int i = 0; i <= reg; i++)
+                {
+                    state->V[i] = state->memory[state->I + i];
+                }
+                state->I += (reg + 1);
+            }
+            break;
+        default: unimplementedInstrunction(state); break;
     }
-} 
+    state->programCounter += 2;
+}
