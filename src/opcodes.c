@@ -205,44 +205,68 @@ static void OpCodeC(Chip8State* state, uint16_t code)
 
 static void OpCodeD(Chip8State* state, uint16_t code)
 {
-    int lines = code & 0xf;
+    // sprite to display
+    int height = code & 0xf;
     int x = state->V[(code & 0xf00) >> 8];
     int y = state->V[(code & 0xf0) >> 4];
+    unsigned short pixel;
     state->V[0xf] = 0;
 
-    for (int i = 0; i < lines; i++)
+    for (int yline = 0; yline < height; yline++)
     {
-        uint8_t *sprite = &state->memory[state->I + i];
-        int spriteBit = 2;
-        for (int j = x; j < (x + 8) && j<64; j++)
+        pixel = state->memory[state->I + yline];
+        
+        for (int xline = 0; xline < 8; xline++)
         {
-            int jover8 = j / 8;
-            int jmod8 = j % 8;
-            uint8_t srcBit = (*sprite >> spriteBit) & 0x1;
-
-            if (srcBit)
+            if ((pixel & (0x80 >> xline)) != 0)
             {
-                uint8_t *desByte_p = &state->screen[(i + y) * (64/8) + jover8];
-                uint8_t desByte = *desByte_p;
-                uint8_t destMask = (0x80 >> jover8);
-                uint8_t destBit = desByte & destMask;
-
-                srcBit = srcBit << (7-jmod8);
-
-                if (srcBit & destBit)
+                if (state->screen[(x + xline + ((y + yline) * 64))] == 1)
                 {
                     state->V[0xF] = 1;
                 }
-
-                destBit ^= srcBit;
-                desByte = (desByte & ~destMask) | destBit;
-
-                *desByte_p = desByte;
+                state->screen[x + xline + ((y + yline) * 64)] ^= 1;
             }
-            spriteBit -= 1;
         }
         
     }
+    
+
+    // for (int i = 0; i < lines; i++)
+    // {
+    //     //  read n bytes from memory starting at i
+    //     uint8_t *sprite = &state->memory[state->I + i];
+    //     int spriteBit = 2;
+    //     // display the n bytes at cordinats x and y
+    //     for (int j = x; j < (x + 8) && j<64; j++)
+    //     {
+            
+    //         int jover8 = j / 8;
+    //         int jmod8 = j % 8;
+    //         uint8_t srcBit = (*sprite >> spriteBit) & 0x1;
+
+    //         if (srcBit)
+    //         {
+    //             uint8_t *desByte_p = &state->screen[(i + y) * (64/8) + jover8];
+    //             uint8_t desByte = *desByte_p;
+    //             uint8_t destMask = (0x80 >> jover8);
+    //             uint8_t destBit = desByte & destMask;
+
+    //             srcBit = srcBit << (7-jmod8);
+
+    //             if (srcBit & destBit)
+    //             {
+    //                 state->V[0xF] = 1;
+    //             }
+
+    //             destBit ^= srcBit;
+    //             desByte = (desByte & ~destMask) | destBit;
+
+    //             *desByte_p = desByte;
+    //         }
+    //         spriteBit -= 1;
+    //     }
+        
+    // }
     
     state->programCounter += 2;
 
@@ -255,6 +279,7 @@ static void OpCodeE(Chip8State* state, uint16_t code)
     {
         case 0x9E:
             {
+                //  skip next instruction if key vx is pressed
                 if (state->key_state[state->V[reg]] != 0)
                 {
                     state->programCounter += 2;
@@ -263,7 +288,8 @@ static void OpCodeE(Chip8State* state, uint16_t code)
             break;
         case 0xA1:
             {
-                if (state->key_state[state->V[reg]] 00 0)
+                //  skip next instruction if key vx is not pressed
+                if (state->key_state[state->V[reg]] == 0)
                 {
                     state->programCounter += 2;
                 }
@@ -281,6 +307,7 @@ static void OpCodeF(Chip8State* state, uint16_t code)
         case 0x07: state->V[reg] = state->delay; break;
         case 0x0A:
             {
+
                 if (state->waitingForKey == 0)
                 {
                     memcpy(&state->save_key_state, &state->key_state, 16);
@@ -310,15 +337,18 @@ static void OpCodeF(Chip8State* state, uint16_t code)
         case 0x29: state->I = FONT_BASE + (state->V[reg] * 5); break;
         case 0x55:
             {
+                //  store registers v0 through v0x in memory starting at lcoation i
                 for (int i = 0; i <= reg; i++)
                 {
                     state->memory[state->I + i] = state->V[i];
                 }
+                // set i to one after vx
                 state->I += (reg + 1);
             }
             break;
         case 0x65:
             {
+                
                 for (int i = 0; i <= reg; i++)
                 {
                     state->V[i] = state->memory[state->I + i];
