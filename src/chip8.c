@@ -99,6 +99,38 @@ static void Disassembler(uint8_t *codeBuffer, int pc)
 
 }
 
+static void loadGameToMemory(const char *filePath, Chip8State* state)
+{
+    FILE *romFile = fopen(filePath, "rb");
+
+    if (romFile == NULL)
+    {
+        printf("error: Couldnt open %s\n", filePath);
+        exit(1);
+    }
+
+    fseek(romFile, 0L, SEEK_END);
+    int fsize = ftell(romFile);
+    fseek(romFile, 0L, SEEK_SET);
+
+    unsigned char *buffer = malloc(fsize + 0x200);
+    fread(buffer + 0x200, fsize, 1, romFile);
+    if ((4096 - 512) > fsize)
+    {
+        for (int i = 0; i < fsize; i++)
+        {
+            state->memory[i + 512] = (uint8_t)buffer[i];
+        }
+
+    }
+    else
+    {
+        printf("file length error");
+    }
+    fclose(romFile);
+    free(buffer);
+}
+
 Chip8State* InitChip8(void)
 {
     // allocate memory of chip 8 state size, and only 1 of it
@@ -114,6 +146,8 @@ Chip8State* InitChip8(void)
     // copy the font over
     // the font takes from 0 to 80 of the memory
     memcpy(&s->memory[FONT_BASE], font, FONT_SIZE);
+
+    s->drawing = 0;
 
     return s;
 }

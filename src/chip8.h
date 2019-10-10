@@ -17,10 +17,12 @@ typedef struct Chip8State
     uint8_t key_state[16];
     uint8_t save_key_state[16];
     int waitingForKey;
+    int drawing;
     uint8_t halt;
 } Chip8State;
 
 Chip8State* Init(void);
 void Emulate(Chip8State *state);
+void loadGameToMemory(const char *filePath, Chip8State* state);
 
 #endif

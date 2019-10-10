@@ -22,6 +22,7 @@ static void OpCode0(Chip8State *state, uint16_t code)
                 // fill the  screen block of memory with 0
                 // by a byte
                 memset(state->screen, 0, BYTE);
+                state->drawing = 1;
                 state->programCounter += 2;
             }
             break;
@@ -267,7 +268,7 @@ static void OpCodeD(Chip8State* state, uint16_t code)
     //     }
         
     // }
-    
+    state->drawing = 1;
     state->programCounter += 2;
 
 }
