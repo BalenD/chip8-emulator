@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <SDL2/SDL.h> 
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_timer.h> 
+#include <stdlib.h>
 #include <stdint.h>
 #include "chip8.h"
 
@@ -24,15 +23,23 @@ uint8_t keymap[16] = {
     SDLK_v,
 };
 
-int main(int argc, char**argv)
+int main(int argc, char** argv)
 {
-    Chip8State* chip = Init();
+    printf("HELLO");
+    if  (argc < 2)
+    {
+        printf("No input file\n");
+    }
+
+    Chip8State* chip = InitChip8();
     int windowWidth = 1024;
     int windowHeight =  512;
 
     SDL_Window* window = NULL;
+    
+    
 
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
     {
         printf("SDL initiialization failed! SDL ERROR: %s\n", SDL_GetError());
         exit(1);
@@ -40,8 +47,8 @@ int main(int argc, char**argv)
 
     window = SDL_CreateWindow(
         "chip8 emulator",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
         windowWidth, windowHeight,
         SDL_WINDOW_SHOWN);
     
@@ -51,14 +58,24 @@ int main(int argc, char**argv)
         exit(2);
     }
 
-    uint32_t render_flags = SDL_RENDERER_ACCELERATED;
+    //uint32_t render_flags = SDL_RENDERER_ACCELERATED;
 
-    SDL_Renderer* render = SDL_CreateRenderer(window, -1, render_flags);
+    SDL_Renderer* render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (render == NULL)
+    {
+        printf("Render failed! SDL ERROR: %s\n", SDL_GetError());
+        exit(2);
+    }
+    else
+    {
+        SDL_SetRenderDrawColor(render, 0xFF, 0xFF, 0xFF, 0xFF);
+    }
+    
     SDL_RenderSetLogicalSize(render, windowWidth, windowHeight);
 
     SDL_Texture* texture = SDL_CreateTexture(
         render, 
-        SDL_PIXELFORMAT_ABGR8888,
+        SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING,
         64, 32);
 
@@ -122,5 +139,6 @@ int main(int argc, char**argv)
             
         }
     }
-}
 
+    exit(0);
+}

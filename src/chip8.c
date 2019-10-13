@@ -7,7 +7,7 @@
 #include "opcodes.h"
 
 
-static void Disassembler(uint8_t *codeBuffer, int pc)
+void Disassembler(uint8_t *codeBuffer, int pc)
 {
     
     // store address of codeBuffer in pointer variable
@@ -99,7 +99,7 @@ static void Disassembler(uint8_t *codeBuffer, int pc)
 
 }
 
-static void loadGameToMemory(const char *filePath, Chip8State* state)
+void loadGameToMemory(const char* filePath, Chip8State* state)
 {
     FILE *romFile = fopen(filePath, "rb");
 
@@ -152,7 +152,7 @@ Chip8State* InitChip8(void)
     return s;
 }
 
-static void Emulate(Chip8State *state)
+void Emulate(Chip8State *state)
 {
     // find the address of the current executing instruction in memory
     // NOTE: an instruction is 2 bytes, retrieve the whole instruction
@@ -174,7 +174,7 @@ static void Emulate(Chip8State *state)
         case 0x01: OpCode1(state, instruction); break;
         case 0x02: OpCode2(state, instruction); break;
         case 0x03: OpCode3(state, instruction); break;
-        case 0x04: Opcode4(state, instruction); break;
+        case 0x04: OpCode4(state, instruction); break;
         case 0x05: OpCode5(state, instruction); break;
         case 0x06: OpCode6(state, instruction); break;
         case 0x07: OpCode7(state, instruction); break;
@@ -182,10 +182,10 @@ static void Emulate(Chip8State *state)
         case 0x09: OpCode9(state, instruction); break;
         case 0x0a: OpCodeA(state, instruction); break;
         case 0x0b: OpCodeB(state, instruction); break;  
-        case 0x0c: opcodeC(state, instruction); break;
+        case 0x0c: OpCodeC(state, instruction); break;
         case 0x0d: OpCodeD(state, instruction); break;
         case 0x0e: OpCodeE(state, instruction); break;
-        case 0x0f: opcodeF(state, instruction); break;
+        case 0x0f: OpCodeF(state, instruction); break;
     }
 }
 

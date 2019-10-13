@@ -21,8 +21,11 @@ typedef struct Chip8State
     uint8_t halt;
 } Chip8State;
 
-Chip8State* Init(void);
+Chip8State* InitChip8(void);
 void Emulate(Chip8State *state);
-void loadGameToMemory(const char *filePath, Chip8State* state);
+void loadGameToMemory(const char* filePath, Chip8State* state);
+void Disassembler(uint8_t *codeBuffer, int pc);
+
+#include "opcodes.h"
 
 #endif

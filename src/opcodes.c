@@ -1,19 +1,20 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "chip8.h"
 #include "font.h"
 
 const int BYTE = 64  * 32 / 8;
 
-static void unimplementedInstrunction(Chip8State* state)
+void unimplementedInstrunction(Chip8State* state)
 {
     printf("ERROR: unimplemented instruction");
     Disassembler(state->memory, state->programCounter);
     exit(1);
 }
 
-static void OpCode0(Chip8State *state, uint16_t code)
+void OpCode0(Chip8State *state, uint16_t code)
 {
     switch (code & 0xF)
     {
@@ -39,7 +40,7 @@ static void OpCode0(Chip8State *state, uint16_t code)
     }
 }
 
-static void OpCode1(Chip8State* state, uint16_t code)
+void OpCode1(Chip8State* state, uint16_t code)
 {
     //  get last 12 bits (where the address to jump to is)
     uint16_t t = code & 0xFFF;
@@ -51,7 +52,7 @@ static void OpCode1(Chip8State* state, uint16_t code)
     state->programCounter = t;
 }
 
-static void OpCode2(Chip8State* state, uint16_t code)
+void OpCode2(Chip8State* state, uint16_t code)
 {
     state->stackPointer += 1;
     //  puts the program counter on top fo the stack
@@ -60,7 +61,7 @@ static void OpCode2(Chip8State* state, uint16_t code)
     state->programCounter = code & 0xFFF;
 }
 
-static void OpCode3(Chip8State* state, uint16_t code)
+void OpCode3(Chip8State* state, uint16_t code)
 {
     uint8_t reg = (code & 0xF00) >> 8;
     uint8_t valTocompare = code & 0xFF;
@@ -71,7 +72,7 @@ static void OpCode3(Chip8State* state, uint16_t code)
     state->programCounter += 2;
 }
 
-static void OpCode4(Chip8State* state, uint16_t code)
+void OpCode4(Chip8State* state, uint16_t code)
 {
     uint8_t req = (code & 0xF00) >> 8;
     uint8_t valTocompare = code & 0xFF;
@@ -82,7 +83,7 @@ static void OpCode4(Chip8State* state, uint16_t code)
     state->programCounter += 2;
 }
 
-static void OpCode5(Chip8State* state, uint16_t code)
+void OpCode5(Chip8State* state, uint16_t code)
 {
     uint8_t reg1 = (code & 0xF00) >> 8;
     uint8_t reg2 = (code & 0xF0) >> 4;
@@ -93,21 +94,21 @@ static void OpCode5(Chip8State* state, uint16_t code)
     state->programCounter += 2;
 }
 
-static void OpCode6(Chip8State* state, uint16_t code)
+void OpCode6(Chip8State* state, uint16_t code)
 {
     uint8_t reg = (code & 0xF00) >> 8;
     state->V[reg] = code & 0xFF;
     state->programCounter += 2;
 }
 
-static void OpCode7(Chip8State* state, uint16_t code)
+void OpCode7(Chip8State* state, uint16_t code)
 {
     uint8_t reg = (code & 0xF00) >> 8;
     state->V[reg] += (code & 0xFF);
     state->programCounter += 2;
 }
 
-static void OpCode8(Chip8State* state, uint16_t code)
+void OpCode8(Chip8State* state, uint16_t code)
 {
     int lastNib = code & 0xF;
     uint8_t vxReg = (code & 0xF00) >> 8;
@@ -116,7 +117,7 @@ static void OpCode8(Chip8State* state, uint16_t code)
     switch (lastNib)
     {
         case 0: state->V[vxReg] = state->V[vyReg]; break;
-        case 1: state->V[vxReg] != state->V[vyReg]; break;
+        case 1: state->V[vxReg] |= state->V[vyReg]; break;
         case 2: state->V[vxReg] &= state->V[vyReg]; break;
         case 3: state->V[vxReg] ^= state->V[vyReg]; break;
         case 4:
@@ -172,7 +173,7 @@ static void OpCode8(Chip8State* state, uint16_t code)
     state->programCounter += 2;
 }
 
-static void OpCode9(Chip8State* state, uint16_t code)
+void OpCode9(Chip8State* state, uint16_t code)
 {
     uint8_t vxReg = (code & 0xF00) >> 8;
     uint8_t vyReg = (code & 0xF0) >> 4;
@@ -183,19 +184,19 @@ static void OpCode9(Chip8State* state, uint16_t code)
     state->programCounter += 2;
 }
 
-static void OpCodeA(Chip8State* state, int16_t code)
+void OpCodeA(Chip8State* state, uint16_t code)
 {
     state->I = code & 0xFFF;
     state->programCounter += 2;
 }
 
-static void OpCodeB(Chip8State* state, uint16_t code)
+void OpCodeB(Chip8State* state, uint16_t code)
 {
     state->programCounter = (code & 0xFFF) + state->V[0];
     
 }
 
-static void OpCodeC(Chip8State* state, uint16_t code)
+void OpCodeC(Chip8State* state, uint16_t code)
 {
     uint8_t xReg = (code & 0xF00) >> 8;
     uint8_t kk = code & 0xFF;
@@ -204,7 +205,7 @@ static void OpCodeC(Chip8State* state, uint16_t code)
     state->programCounter += 2;
 }
 
-static void OpCodeD(Chip8State* state, uint16_t code)
+void OpCodeD(Chip8State* state, uint16_t code)
 {
     // sprite to display
     int height = code & 0xf;
@@ -273,7 +274,7 @@ static void OpCodeD(Chip8State* state, uint16_t code)
 
 }
 
-static void OpCodeE(Chip8State* state, uint16_t code)
+void OpCodeE(Chip8State* state, uint16_t code)
 {
     uint8_t reg = (code & 0xF00) >> 8;
     switch (code & 0xF0)
@@ -300,7 +301,7 @@ static void OpCodeE(Chip8State* state, uint16_t code)
     }
 }
 
-static void OpCodeF(Chip8State* state, uint16_t code)
+void OpCodeF(Chip8State* state, uint16_t code)
 {
     uint8_t reg = (code & 0xF00) >> 8;
     switch (code & 0xF)

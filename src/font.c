@@ -1,6 +1,6 @@
 #include "font.h"
 
-uint8_t font = {
+uint8_t font[] = {
     // 0
     0xF0,
     0x90,
@@ -112,4 +112,4 @@ uint8_t font = {
     0x80,
     0x80,
 
-}
+};
